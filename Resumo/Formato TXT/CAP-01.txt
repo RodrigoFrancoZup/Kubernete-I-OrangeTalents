@@ -1,0 +1,48 @@
+Capítulo 01 -  Conhecendo o Kubernetes
+Nesse capítulo nós aprendemos:
+
+⦁	Que poderíamos ter uma máquina rodando diversos containers (Container Docker), mas que toda máquina tem um limite computacional e quando atingirmos esse limite a máquina pode reiniciar, ou a aplicação rodar lentamente, entre outros problemas;
+
+⦁	Para resolver o problema de atingir o poder computacional temos duas alternativa:
+	I) Escalabilidade Vertical: Trocar a máquina atual por uma máquina mais parruda, com maior poder computacional;
+	
+	II) Escalabilidade Horizontal: É mantar a máquina atual e adicionar outras máquinas. Assim podemos distribuir os containers entre essas máquinas. Haverá uma comunicação entre essas máquinas.
+
+⦁	Quando adotamos a Escalabilidade Horinzontal temos diversas máquinas, e chamamos isso de Cluster;
+
+⦁	Cluster = Conjunto de máquinas dividindo o poder computacional;
+
+⦁	Com o Kubernet poderemos criar um Cluster na AWS, Google Cloud Plataform, Azure.
+
+⦁	Que o Kubernet é um orquestrador de containers e que também possui diversos recursos: 
+	I)Pense num Cluster rodando e que queremos adicionar um novo container (aplicação) para rodar, será o Kubernet que vai definir em qual máquina esse container sera alocado. 
+
+	II)Agora pense no cenário em que o container parou de funcionar, o Kubernet vai saber e vai tratar isso de forma automática.
+
+	III)Agora pense no cenário que todas as máquinas atingiram o limite computacional, o Kubernet irá providenciar uma nova máquina virtual (vai criar).
+
+⦁	Kubernet tem diversos recursos (Resources), por exemplo: POD, VOL,DEPLOY,PV,SC,SVC, entre outros... Vamos usar esses recursos para criar aplicações bem elaboradas.
+
+⦁	Dentro de um Cluster há diversas máquinas, e há duas categorias de máquinas:
+
+I) Master = é responsável por gerenciar o próprio Cluster em que ela está, ou seja, essas máquinas vão receber comandos para fazer uma coisa;
+
+II) Node = é responsável exectuar as aplicações.
+
+⦁	Dentro das categorias apresentadas anteriormente teremos uma outra divisão.
+
+I) Máquinas Master podem ser: API, C-M, SCHED, ETCD.
+	API = É uma API rest que recebe os comandos do mundo externo e passa para as outras máquinas do tipo node;
+	C-M = Matem e atualiza o estado desejado;
+	SCHED = Determina onde e quando um POD (um dos resources) será execudado no Cluster;
+	ETCD = Armazena todos os dados vitais do Cluster em um banco de dados.
+
+	II) Máquinas Node podem ser: kubelet e k-proxy.
+	Kubelet = Responsável pela execução dos PODS dentro dos nodes 
+	K-Proxy = Responsável pela comunicação entre os nodes.
+
+⦁	É comum ouvirmos então que máquinas Master são/estão no Control Plane e que máquinas Node são/estão Nodes;
+
+⦁	A máquina API é quem recebe os comandos do mundo externo, será com ela que nós desenvolvedores vamos conversar. Como vamos conversar com ela? Coma a ferramenta Kubectl.
+
+⦁	Com a ferramenta Kubectl podemos conversar de forma Imperativa, ou seja, escrevendo comandos para serem executados, ou de forma Declarativa, onde poderemos escrever arquivos de definição e executá-los.

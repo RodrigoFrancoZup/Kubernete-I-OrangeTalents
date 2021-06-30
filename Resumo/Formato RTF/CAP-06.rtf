@@ -1,0 +1,199 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1046{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset2 Symbol;}}
+{\colortbl ;\red0\green0\blue255;}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\fs24\lang22 Cap\'edtulo 06 - Definindo vari\'e1veis de ambiente.\par
+Nesse cap\'edtulo:\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Aprendemos que a imagem do Banco de Dados precisa que algumas variaveis de ambientes sejam definidas para que o mesmo funcione, podemos ver isso na descri\'e7\'e3o da imagem do Mysql no Docker Hub;\line\par
+{\pntext\f1\'B7\tab}Aprendemos que \'e9 poss\'edvel definir essas vari\'e1veis de ambiente de duas maneiras, colocando os valores das vari\'e1veis diretamente no arquivo declarativo do Pod do bando de dados (db-noticias) ou ent\'e3o criando um ConfigMap;\line\par
+{\pntext\f1\'B7\tab}Definindo vari\'e1veis de ambiente diretamente no arquivo declarativo:\line\par
+
+\pard\sa200\sl276\slmult1 apiVersion: v1\par
+kind: Pod\par
+metadata:\par
+  name: db-noticias\par
+  labels:\par
+    app: db-noticias\par
+spec:\par
+  containers:\par
+    - name: db-container\par
+      image: aluracursos/mysql-db:1\par
+      ports:\par
+        - containerPort: 3306\par
+      env:\par
+        - name: "MYSQL_ROOT_PASSWORD"\par
+          value: "q1w2e3r4"\par
+        - name: "MYSQL_DATABASE"\par
+          value: "empresa"\par
+        - name: "MYSQL_PASSWORD"\par
+          value: "q1w2e3r4"\par
+\par
+Obs: O respons\'e1vel por declarar as vari\'e1veis de ambiente \'e9 a "tag" env: ap\'f3s ela vem o -name que \'e9 o nome da vari\'e1vel do ambiente, e o value que \'e9 o valor que queremos passar para a vari\'e1vel de ambiente.\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Agora o banco de dados foi configurado, podemos acess\'e1-lo com "kubectl exec -it db-noticias -- bash" e ver que o banco foi criado. Mas o sistema-noticias ainda n\'e3o funciona, pois ele tamb\'e9m depende de vari\'e1veis de ambiente que indicam onde o banco de dados se encontra. Podemos ver isso acessando o sistema-noticas com "kubectl exec -it sistema-noticias -- bash" e depois "cat bancodedados.php", esse \'faltimo vamos ver o conte\'fado do arquivo php que configura o banco de dados. Antes de configurar o sistema-noticias vamos configurar as vari\'e1veis de ambiente do banco de outra forma, a forma recomendada que \'e9 usando o ConfigMap;\line\par
+{\pntext\f1\'B7\tab}Vamos criar um resource do tipo ConfigMap, esse \'e9 um recurso pr\'f3prio para armazenar vari\'e1veis de ambiente e sua vantagem \'e9 que ele poder\'e1 ser usado por diversos pod's. Veja como fica a cria\'e7\'e3o de um CM (ConfigMap), para isso crie o arquivo chamado db-configmap.yaml:\par
+
+\pard\sa200\sl276\slmult1\par
+apiVersion: v1\par
+kind: ConfigMap\par
+metadata:\par
+  name: db-configmap\par
+data:\par
+  MYSQL_ROOT_PASSWORD: q1w2e3r4\par
+  MYSQL_DATABASE: empresa\par
+  MYSQL_PASSWORD: q1w2e3r4\par
+\line Obs: As vari\'e1veis de ambiente s\'e3o agora definidas na "tag" data, e utilizamos a estrutura chave: valor, ou seja, MYSQL_ROOT_PASSWORD \'e9 a vari\'e1vel de ambiente e seu valor ser\'e1 q1w2e3r4.\par
+Agora podemos rodar os comandos para ver o ConfigMap:\par
+\tab kubectl get configmap\par
+\tab kubectle describe configmap db-configmap\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Agora precisamos configurar o pod db-noticias para utilizar esse ConfigMap no lugar de deixar as vari\'e1veis diretamente no arquivo de descri\'e7\'e3o.\par
+
+\pard\sa200\sl276\slmult1\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Configurando o pod db-noticiaspara utilizar o ConfigMap dv-configmap, veja que h\'e1 duas maneiras para isso e a mais recomendadaa ser\'e1 a alternativa 2:\par
+
+\pard\sa200\sl276\slmult1\par
+Alternativa 1:\par
+\par
+apiVersion: v1\par
+kind: Pod\par
+metadata:\par
+  name: db-noticias\par
+  labels:\par
+    app: db-noticias\par
+spec:\par
+  containers:\par
+    - name: db-container\par
+      image: aluracursos/mysql-db:1\par
+      ports:\par
+        - containerPort: 3306\par
+      env:\par
+        - name: "MYSQL_ROOT_PASSWORD"\par
+          valueFrom:\par
+            configMapKeyRef:\par
+              name: db-configmap\par
+              key: MYSQL_ROOT_PASSWORD\par
+        - name: "MYSQL_DATABASE"\par
+          valueFrom:\par
+            configMapKeyRef:\par
+              name: db-configmap\par
+              key: MYSQL_DATABASE\par
+        - name: "MYSQL_PASSWORD"\par
+          valueFrom:\par
+            configMapKeyRef:\par
+              name: db-configmap\par
+              key: MYSQL_PASSWORD\par
+\par
+Obs: A defini\'e7\'e3o das vari\'e1veis de ambiente ainda continuam dentro da "tag" env, depois vem o -name que \'e9 o nome da vari\'e1vel de ambiente, depois vem valueFrom: que indica que o valor vai vir de algum lugar diferente, configMapKeyRef: que indica que o valor vai vir de um ConfigMap, depois vem name: que indica o nome do ConfigMap e por fim vem a key: que \'e9 a chave definida no arquivo do ConfigMap que vai ter o valor que queremos dar para vari\'e1vel.\par
+\par
+Alternativa 2 (pode ser usada  quando nosso Pod for usar todas as vari\'e1veis definidas no ConfigMap):\par
+\par
+apiVersion: v1\par
+kind: Pod\par
+metadata:\par
+  name: db-noticias\par
+  labels:\par
+    app: db-noticias\par
+spec:\par
+  containers:\par
+    - name: db-container\par
+      image: aluracursos/mysql-db:1\par
+      ports:\par
+        - containerPort: 3306\par
+      envFrom:\par
+        - configMapRef:\par
+          \tab name: db-configmap\par
+\par
+Obs: Agora mudamos a "tag" env para envForm, e indicamos atav\'e9s do - configMapRef que vamos pegar as variaveis de ambiente e seus valores em um ConfigMap, e indicamos qual ser\'e1 o ConfigMap atrav\'e9s do campo name:\par
+\par
+N\'e3o esque\'e7a de deletar o pod db-noticias com "kubectl delete pod db-noticias" e depois cri\'e1-lo com essa nova configura\'e7\'e3o com "kubectl apply -f .\\db-noticias.yaml"\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Agora o Pod db-noticias j\'e1 est\'e1 pegando as vari\'e1veis de ambiente do ConfigMap db-configmap;\line\par
+{\pntext\f1\'B7\tab}Temos agora que configurar o pod sistema-noticias, ou seja, definir neste pod o local que se encontra o banco de dados (descobrimos isso analisando o arquivo bancodedados.php que enontra-se na imagem utilizada no container do pod sistema-noticias). Vamo ent\'e3o criar um ConfigMap para o pod sistema-noticias;\line\par
+{\pntext\f1\'B7\tab}Criando o ConfigMap com nome sistema-configmap, para isso criamos o arquivo sistema-configmap.yaml, veja como ficou:\par
+
+\pard\sa200\sl276\slmult1\par
+apiVersion: v1\par
+kind: ConfigMap\par
+metadata:\par
+  name: sistema-configmap\par
+data:\par
+  HOST_DB: svc-db-noticias:3306 \par
+  USER_DB: root\par
+  PASS_DB: q1w2e3r4\par
+  DATABASE_DB: empresa\par
+\par
+Obs: A vari\'e1vel HOST_DB precisa saber o local que se encontra o banco de dados. Poder\'edamos colocar o IP do Pod db-noticias, mas lembra que esse Pod pode ser derrubado e um novo ser criado com IP diferente? Ent\'e3o a melhor maneira \'e9 colocar o IP do SVC do db-noticias, ou seja, svc-db-noticias, a vantagem do SVC \'e9 que podemos utilizar o seu IP ou o seu Nome, neste caso usamos o nome.\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Configurar o Pod sistema-noticias para utilizar as vari\'e1veis de ambiente do ConfigMap sistema-configmap. Veja como ficou sua altera\'e7\'e3o:\par
+
+\pard\sa200\sl276\slmult1\par
+apiVersion: v1\par
+kind: Pod\par
+metadata:\par
+  name: sistema-noticias\par
+  labels:\par
+    app: sistema-noticias\par
+spec:\par
+  containers:\par
+    - name: sistema-noticias-container\par
+      image: aluracursos/sistema-noticias:1\par
+      ports:\par
+        - containerPort: 80\par
+      envFrom:\par
+        - configMapRef:\par
+            name: sistema-configmap\par
+\par
+Obs: Lembre-se de deletar o Pod sistema-noticias "kubectl delete pod sistema-noticias" e cri\'e1-lo novamente "kubectl apply -f .\\sistema-noticias.yaml" com essa nova configura\'e7\'e3o.\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Agora j\'e1 podemos acessar o endere\'e7o {{\field{\*\fldinst{HYPERLINK http://localhost:30001 }}{\fldrslt{http://localhost:30001\ul0\cf0}}}}\f0\fs24  e cadastrar uma noticia;\line\par
+{\pntext\f1\'B7\tab}Mas o portal que fica no endere\'e7o localhost:30000 ainda n\'e3o funciona, pois o Pod do portal tamb\'e9m precisa de uma vari\'e1vel de ambiente para seu funcionamento. A sua vari\'e1vel vai definir o endere\'e7o que encontra-se o servico (Pod) sistema-noticias, pois o portal faz consultas a este servi\'e7o para ele poder montar a sua p\'e1gina com noticias. Descobrimos isso entrando no Pod portal-noticias com o comando "kubectl exec -it portal-noticias -- bash" e analisanto o arquivo configuracao.php com "cat > configuracao.php", a vari\'e1vel se chama IP_SISTEMA.\line\par
+{\pntext\f1\'B7\tab}Criando um ConfigMap para ter as vari\'e1veis de ambiente do Pod portal-noticias. Criamos o arquivo chamado portal-configmap.yaml, comn o seguinte conte\'fado:\par
+
+\pard\sa200\sl276\slmult1\par
+apiVersion: v1\par
+kind: ConfigMap\par
+metadata:\par
+  name: portal-configmap\par
+data:\par
+  IP_SISTEMA: {{\field{\*\fldinst{HYPERLINK http://localhost:30001 }}{\fldrslt{http://localhost:30001\ul0\cf0}}}}\f0\fs24  #No linux teremos que trocar localhost por Internal IP\par
+\par
+Obs: Crei de fato esse Resource com o comando "kubectl apply -f .\\portal-configmap.yaml"\par
+\par
+Obs2: O valor da vari\'e1vel de ambiente aqui teve que ser endere\'e7o que usamos externamente para acessar  o SVC NodePort do sistema-noticias. Por isso usamos localhost, se fosse no linux seria o Internal IP.\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Devemos agorar configurar o Pod portal-noticias para usar o seu ConfigMap, logo vamos atualizar seu arquivo que ficar\'e1 assim:\par
+
+\pard\sa200\sl276\slmult1\par
+apiVersion: v1\par
+kind: Pod\par
+metadata:\par
+  name: portal-noticias\par
+  labels:\par
+    app: portal-noticias\par
+spec:\par
+  containers:\par
+    - name: portal-noticias-container\par
+      image: aluracursos/portal-noticias:1\par
+      ports:\par
+        - containerPort: 80\par
+      envFrom:\par
+        - configMapRef:\par
+            name: portal-configmap\par
+\par
+Obs: Lembre-se de matar esse Pod e contru\'ed-lo com a nova configura\'e7\'e3o.\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Agora podemos acessar o endere\'e7o {{\field{\*\fldinst{HYPERLINK http://localhost:30000 }}{\fldrslt{http://localhost:30000\ul0\cf0}}}}\f0\fs24  e ver as noticias cadastradas!\par
+
+\pard\sa200\sl276\slmult1\par
+}
+ 

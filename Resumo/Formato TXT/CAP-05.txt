@@ -1,0 +1,117 @@
+Capítulo 05 - Aplicando Services ao Projeto
+Nesse capítulo:
+
+⦁	Vamos colocar em prática o que aprendemos até o momento. Vamos criar o ambiente para o projeto portal-noticias;
+
+⦁	Vamos deletar todos os pod's e service's criado até o momento. Para isso execute os comandos:
+
+		kubectl delete pods --all
+		kubectl delete svc --all
+
+
+⦁	Vamos criar um pod para a imagem do projeto portal-noticias. Esse projeto se trata de uma página web que exibirá noticias. No caso vamos criar o arquivo portal-noticias.yaml com o seguinte contúdo:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: portal-noticias
+  labels:
+    app: portal-noticias
+spec:
+  containers:
+    - name: portal-noticias-container
+      image: aluracursos/portal-noticias:1
+      ports:
+        - containerPort: 80
+
+⦁	Criar o SVC do tipo NodePort para o pod portal-noticias. Como queremos ter acesso tanto interno como externo no pod, o service a ser criado será do tipo NodePort. Crei o arquivo svc-portal-noticias.yaml com o seguinte conteudo:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-portal-noticias
+spec:
+  type: NodePort
+  ports:
+    - port: 80 # o targetPort: se ficar omitido será com o mesmo valor do port
+      nodePort: 30000
+  selector:
+    app: portal-noticias
+
+⦁	Construir de fato os nodes declarados anteriormente. Basta rodar os comandos:
+
+		kubectl apply -f portal-noticias.yaml
+		kubectl apply -f svc-portal-noticias.yaml
+
+Agora vamos poder acessar o portal-noticias através do localhost:30000
+
+⦁	Agora vamos criar um pod para o projeto responsável por cadastrar as notícias. Esse sistema é conhecido como sistema-noticias. Para isso criei o arquivo sistema-noticias.yaml, com o conteúdo:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sistema-noticias
+  labels:
+    app: sistema-noticias
+spec:
+  containers:
+    - name: sistema-noticias-container
+      image: aluracursos/sistema-noticias:1
+      ports:
+        - containerPort: 80
+
+⦁	Criar o SVC do tipo NodePort para o pod sistema-noticias. Como queremos ter acesso tanto interno como externo no pod, o service a ser criado será do tipo NodePort. Crei o arquivo svc-sistema-noticias.yaml com o seguinte conteudo:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-sistema-noticias
+spec:
+  type: NodePort
+  ports:
+    - port: 80 # o targetPort: se ficar omitido será com o mesmo valor do port
+      nodePort: 30001
+  selector:
+    app: sistema-noticias
+
+⦁	Construir de fato os nodes declarados anteriormente. Basta rodar os comandos:
+
+		kubectl apply -f sistema-noticias.yaml
+		kubectl apply -f svc-sistema-noticias.yaml
+
+Agora vamos poder acessar sistema-noticas através do localhost:30001
+
+⦁	O pod sistema-noticias precisa de um banco de dados para ele poder armazenar as noticias cadastradas. Então vamos ter que criar um Pod para o banco de dados. Para isso criei o arquivo db-noticias.yaml, com o seguinte conteúdo:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: db-noticias
+  labels:
+    app: db-noticias
+spec:
+  containers:
+    - name: db-container
+      image: aluracursos/mysql-db:1
+      ports:
+        - containerPort: 3306
+
+⦁	Precisamos criar um service para o pod bd-noticias, pois embora ele seja de banco de dados ele é igual a qualquer outro Pod, se ele for destruído e re-construído ele ganhara um novo IP e assim o pod sistema-noticias não saberá como se comunicar com ele. Só que agora podemos criar um Service do tipo ClusterIP, pois não vamos acessar esse Pod de modo externo, somente o Pod sistema-noticias que vai acessá-lo, e esse pod encontra-se dentro do mesmo Cluster.Crei o arquivo svc-db-noticias.yaml, com o seguinte conteúdo:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-db-noticias
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306 # o targetPort: se ficar omitido será com o mesmo valor do port
+  selector:
+    app: db-noticias
+
+⦁	Construir de fato os nodes declarados anteriormente. Basta rodar os comandos:
+
+		kubectl apply -f db-noticias.yaml
+		kubectl apply -f svc-db-noticias.yaml
+
+ATENÇÃO: Do jeito que foi declarado o db-noticias irá ocorrer um erro, pois a imagem usada para construir seu container exige que passemos algumas variáveis de ambiente, como: usuario, senha e schema do Banco de Dados que vamos usar! Para funcionar temos que passar essas informações e vamos aprender isso no próximo capítulo!

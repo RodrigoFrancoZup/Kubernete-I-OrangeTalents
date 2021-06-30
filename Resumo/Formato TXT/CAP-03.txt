@@ -1,0 +1,118 @@
+Capítulo 03 - Criando e entendendo Pods
+Nesse capítulo nós aprendemos:
+
+⦁	Que Pods é um dos Resources do Kubernete. Podemos fazer a seguinte analogia para entender esse recurso: No mundo Docker criamos e gerenciamos Containers, no mundo do Kubernete vamos criar e gerenciar Pods;
+
+⦁	Nós pedimos para API via kuberctl criar um Pod; 
+
+⦁	Pod é uma capsula que vai ter um ou mais containers dentro;
+
+⦁	Pense no Pod como uma caixinha que dentro dela haverá um ou mais containers;
+
+⦁	Quando criamos uma Pod ela passará a ter um IP, ou seja, a "caixinha" ganha um ip. Cada container terá uma porta, logo vamos poder fazer uma requsição com: ipDoPod:portaDoContainer;
+
+⦁	Quando todos os containers falharem em um Pod, o Pod será destruído e um novo Pod será criado. O novo Pod terá um novo IP;
+
+⦁	Pod são efêmeros, eles vão ser substituídos a todo momento;
+
+⦁	Um Pod só é destruído se ele falhar, e a falha de um Pod só ocorre quando TODOS os containers falharem, se tiver apenas um funcionando o Pod não será destruído;
+
+⦁	Uma vantagem de utilizar Pod: Os containers que se encontram no mesmo Pod, podem se comunicarem usando o localhost;
+
+⦁	Criando o Pod de maneira Declarativa:
+
+Para criar um pod usamos o comando "kubectl run nomeDoPod --image=nomeDaImagem:versaoDaImagem. Vamos criar um Pod chamado nginx-pod e usar a imagem nginx ná ultima versão, para isso teremos que usar o comando:
+	
+	kubectl run ngins-pod --image=nginx:latest
+
+⦁	Comando para ver se o Pod foi criado:
+
+Podemos executar o comando:
+
+	kubectl get pods
+
+Ou o seguinte comando, que vai amarrar o terminal e o mesmo vai ficar atualizando o status do Pod. Para sair basta apertar "ctl + c":
+
+	kubectl get pods --watch
+
+⦁	Comando para obter mais informações de um Pod:
+
+Podemos ter informações de um pod com o comando "kubectl describre pod nomeDoPod. Para saber mais informações do Pod nginx-pod podemos rodar o comando:
+
+	kubectl describe pod nginx-pod
+
+⦁	Podemos atualizar um Pod já existente com o comando kubectl edit pod nomeDoPod. No nosso exemplo, poderíamos executar o comando:
+
+	kubectl edit pod nginx-pod
+
+Um editor de texto com a configuração desse pod será aberto. Ao editar algo e salvar vamos estar atualizando o Pod.
+
+⦁	Criando o Pod de modo Declarativo (Aruiqvo):
+
+I) Devemos criar um arquivo, com a extensão json ou yaml. Chamei meu arquivo de primeiro-pod.yaml;
+
+II) O arquivo vai ter o conteúdo:
+
+apiVersion: v1 # Versão da API que vamos utilizar 
+kind: Pod # O que queremos criar?
+metadata: # Aqui vamos informar os dados do objeto que queremos criar
+  name: primeiro-pod-declarativo # Vamos dar esse nome ao Pod a ser criado
+spec: # Aqui vamos informar as especificações do objeto que queremos criar
+  containers: # Uma das especificações que quero dar ao Pod é o container 
+  - name: nginx-container # Nome do cointaer
+    image: nginx:latest # Imagem a ser utilizada no container
+
+	III) No terminal, ir no diretório que contem o arquivo primeiro-pod.yaml e executar o comando:
+
+		kubectl apply -f .\primeiro-pod.yaml
+
+⦁	Atualizando um Pod de modo Declarativo:
+
+Basta agora editar o arquivo que define o Pod, no nosso exemplo é o arquivo primeiro-pod.yaml. Após editá-lo, podemos executar novamente o comando "kubectl apply -f .\primeiro-pod.yaml"
+
+⦁	Deletar o Pod que foi criado de modo imperativo:
+
+O comando kubectl delete pod nomeDoPod, no nosso caso ficará:
+
+	kubectl delete pod nginx-pod
+
+⦁	Deletar o Pod que foi criado de modo Declarativo:
+
+Podemos deletar com o comando kubectl delete pod nomeDoPod, no nosso caso ficará:
+
+	kubectl delete pod nginx-pod
+
+Ou
+
+Podemos deletar com o comando kubectl delete -f nomeDoArquivoQueGerouOPod, no nosso caso ficará:
+
+	kubectl delete -f .\primeiro-pod.yaml
+
+⦁	Criando o Primeiro Projeto:
+
+	I) Criei o arquivo portal-noticias.yaml com o conteudo:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: portal-noticias
+spec:
+  containers:
+    - name: portal-noticias-container
+      image: aluracursos/portal-noticias:1
+
+	II) Rodei o comando apra criar:
+
+		kubectl apply -f .\portal-noticias.yaml
+
+	III) Rodei o comando para pegar informações desse Pod criado:
+
+		kubectl describe pod portal-noticias
+	
+	Peguei o IP do Pod, no caso foi 10.1.0.8, mas ele ainda não é acessível ao mundo externo. E o container ainda não tem porta definida, logo não vamos poder acessar essa aplicação. No próximo capítulo vamos aprender.
+
+
+⦁	Comando para entrar dentro do Container, ou seja, ter acesso ao seu terminal é "kubectl exec -it nomeDoPod -- nomeDoComandoASerExecutado. No ficará:
+
+	kubectl exec -it portal-noticias -- bash
+

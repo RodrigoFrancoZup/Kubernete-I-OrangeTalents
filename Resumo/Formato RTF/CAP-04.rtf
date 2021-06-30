@@ -1,0 +1,142 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1046{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset2 Symbol;}}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\fs24\lang22 Cap\'edtulo 04 - Expondo pods com services\par
+Nesse cap\'edtulo n\'f3s aprendemos:\line\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Os Pods dentro do mesmo Cluster conseguem se comunicarem entre si atrav\'e9s dos IP's;\line\par
+{\pntext\f1\'B7\tab}A comunica\'e7\'e3o atrav\'e9s do IP's tem um problema, quando um Pod falha o Kubernete derruba o Pod e cria outro, e o novo Pod vai ter um novo IP, ou seja, como os outros Pods v\'e3o saber que o IP de um Pod mudou? Ou seja, os Pod's n\'e3o v\'e3o conseguir conversar com o novo Pod.;\line\par
+{\pntext\f1\'B7\tab}Devemos usar o Resource Service (SVC). Esse recurso cria uma abstra\'e7\'e3o para expor a aplica\'e7\'e3o que est\'e1 rodando no Pod (dentro do container), cria uma IP fixo para comunica\'e7\'e3o, cria um DNS para os POD's, faz balanceamento de carga;\line\par
+{\pntext\f1\'B7\tab}Pense agora que o Pod1 quer conversar com o Pod2. Vamos usar o SVC para haver comunica\'e7\'e3o. Vamos criar o SVC e ele dever\'e1 ser configurado para ser capaz de enviar mensagens para o Pod2, assim o Pod1 vai enviar a mensagem para o SVC e este que vai entregar a mensagem ao Pod2. O IP do SVC nunca muda, logo o Pod1 sempre vai conseguir enviar mensagem para o SVC;\line\par
+{\pntext\f1\'B7\tab}Existem tr\'eas tipos de SVC: ClusterIP, NodePort, LoadBalancer. Cada um tem uma finalidade.\line\par
+{\pntext\f1\'B7\tab}SVC do Tipo ClusterIP:\line\line Esse serve para fazer a comunica\'e7\'e3o entre os Pod's que est\'e3o dentro do mesmo Cluster. Ou seja, a comunica\'e7\'e3o ser\'e1 somente dentro do Cluster.\line\line Esse servi\'e7o n\'e3o \'e9 de m\'e3o dupla, ou seja, se o Pod1 tem um ClusterIP para s\'ed, todos os outros Pod's v\'e3o conseguir enviar mensagem para o Pod1, mas o Pod1 n\'e3o \'e9 capaz de enviar mensagem para os outros Pod's. Isso se d\'e1 porque o ClusterIP \'e9 configurado para ele enviar a mensagem para o Alvo, neste exemplo o ClusterIP estar\'e1 configurado para enviar mensagens apenas para o Pod1.\line\line N\'f3s, desenvolvedores n\'e3o vamos conseguir conversar com o Pod1, mesmo ele tendo um ClusterIP, pois esse s\'f3 garante comunica\'e7\'e3o interna no Cluster.\line\par
+{\pntext\f1\'B7\tab}Criando um SVC do Tipo ClusterIP:\line\line Para aplicar esse exemplo vou criar mais 2 Pod's, o pod-1 e o pod-2. Veja como ficou o arquivo de cria\'e7\'e3o do pod-1 (o outro \'e9 igual):\par
+
+\pard\sa200\sl276\slmult1\par
+apiVersion: v1\par
+kind: Pod\par
+metadata:\par
+  name: pod-1\par
+spec:\par
+  containers:\par
+    - name: container-pod-1\par
+      image: nginx:latest\par
+      ports:\par
+        - containerPort: 80 \par
+\par
+Obs: - containerPort: 80 indica que dentro do Cluster, esse container \'e9 acessado pela porta 80\line\line\line Temos agora que rodar os comandos:\line\line\tab kubectl apply -f .\\pod-1.yaml\line\tab kubectl apply -f .\\pod-2.yaml\par
+\par
+Criando o SVC ClusterIP para o pod-2. Vamos criar o arquivo svc-pod-2.yaml, com o seguinte conteudo:\line\line apiVersion: v1\par
+kind: Service\par
+metadata:\par
+  name: svc-pod-2\par
+spec:\par
+  type: ClusterIP\par
+  selector:\par
+    app: segundo-pod\par
+  ports:\par
+    - port: 80 #Indica que esse servi\'e7o ouve e despacha na porta 80\par
+\par
+Obs: Repare que nesse arquivo, usamos a tag selector: app: segundo-pod, \'e9 aqui que configuramos que esse servi\'e7o sempre vai enviar mensagem para o pod-2, mas para isso funcionar tivemos que colocar o seguinte trecho no arquivo que descreve o Pod-2 (a labels \'e9 sempre chave valor, nesse caso a chave ser\'e1 app e seu valor segundo-pod:\par
+\par
+metadata:\par
+  name: pod-2\par
+  labels:\par
+    app: segundo-pod\par
+\line\line Ap\'f3s criar o arquivo svc-pod-2.yaml, rodamos o comando:\par
+\par
+\tab kubectl apply -f .\\svc-pod-2.yaml\par
+\line\line Podemos ver se ele foi criado com o comando:\line\tab\par
+\tab kubectl get svc \line\line ou\line\line\tab kubectl get service\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Testando o ClusterIP:\par
+
+\pard\sa200\sl276\slmult1 Para isso vamos entrar no terminal do Pod-1 e mandar uma mensagem para o SVC e ver se o mesmo vai cair no Pod-2. Veja como fazer:\par
+\par
+Rodar o comando para entrar no Pod-1:\par
+\tab\par
+\tab kubectl exec -it pod-1 -- bash\par
+\line\line Agora estamos no terminal do pod-1, rodar o comando:\par
+\par
+\tab curl 10.100.6.179:80\par
+Obs: Esse n\'famero \'e9 o IP do SVC svc-pod-2, e a porta \'e9 80 porque o configuramos assim no seu arquivo.\par
+\par
+O resultado ser\'e1 o conteudo HTML do pod-2. Est\'e1 funcionando!\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Alterando a configura\'e7\'e3o do svc-pod-2 para ouvir em uma porta X e despachar na porta Y:\line\line Basta alterar o seu conteudo da tag ports, ficando assim:\par
+
+\pard\sa200\sl276\slmult1\par
+  ports:\par
+    - port: 9000 #Indica que esse servi\'e7o ouve na 9000\par
+      targetPort: 80 #Indica que vamos despachar na porta 80\par
+\par
+Obs: Antes s\'f3 tinhamos o - port: 80, ent\'e3o essa ficava valendo para os dois (ouvir e despachar).\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Criando um SVC do Tipo NodePort:\line\par
+
+\pard\sa200\sl276\slmult1 Esse tipo de servi\'e7o permite a comunica\'e7\'e3o com o mundo externo, ou seja, n\'f3s desenvolvedores em nossa m\'e1quina vai poder conversar com as m\'e1quinas que est\'e3o dentro do Cluster. \par
+\'c9 importante destacar que um NodePort tamb\'e9m \'e9 um ClusterIP, ou seja, ele tamb\'e9m garante a comunica\'e7\'e3o est\'e1vel com as m\'e1quinas (Pod's) dentro do Cluster.\par
+\par
+Vamos criar um NodePorte para expor o pod-1 para o mundo externo. Criamos o arquivo svc-pod-1.yaml com o conteudo:\par
+\par
+apiVersion: v1\par
+kind: Service\par
+metadata:\par
+  name: svc-pod-1\par
+spec:\par
+  type: NodePort\par
+  ports:\par
+    - port: 80 #Se eu deixar somente - port, o targetPort ter\'e1 o mesmo valor\par
+      nodePort: 30000\par
+  selector:\par
+    app: primeiro-pod\par
+\par
+Obs: Veja que usamos o selector: app: primeiro-pod, como queremos que esse servi\'e7o envie mensagem para o primeiro-pod, teremos que colocar uma label com essa mesma chave/valor no pod-1, ou seja, adicionar o seguinte trecho:\par
+\par
+metadata:\par
+  name: pod-1\par
+  labels:\par
+    app: primeiro-pod\par
+\par
+Agora j\'e1 est\'e1 funcionando, se entramos no pod portal-noticias e enviar uma mensagem para o svc-pod-1 que \'e9 um PortNode a mensagem chegar\'e1 ao pod1, pois o svc est\'e1 configurado para isso.\par
+Mas como n\'f3s do mundo externo envia algo para o svc-pod-1? Vai depender do seu sistema operacional:\par
+Se rodarmos o comando:\par
+\par
+\tab kubectl get svc\par
+\par
+Veremos que o ip do svc-pod-1 (NodePort) \'e9 10.100.169.152, mas esse IP s\'f3 funciona dentro do Cluster, externamente n\'e3o conseguimos acess\'e1-lo. Para acessar teremos que ver em qual Sistema Operional voc\'ea est\'e1 usando, se for:\par
+Windows = Podemos entrar no navegador e fazer uma requisi\'e7\'e3o para localhost:30000, usamos essa porta porque configuramos assim no arquivo do svc-pod-1 (nodePort), e aqui o IP do n\'f3 que est\'e1 rodando o Kubernete (docker-desktop) j\'e1 \'e9 mapeado para o localhost\par
+\par
+Linux = O mapeamento do IP do n\'f3 rodando o Kubernet n\'e3o \'e9 mapeado para localhost, e sim para o mesmo IP chamado de INTERNAL IP, para descobri-lo basta rodar o comando:\par
+\par
+\tab kubectl get nodes -o wide\par
+\par
+Ap\'f3s isso, basta pegar o IP Internal Ip e fazer a requisi\'e7\'e3o com esse ip.\par
+\par
+
+\pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent0{\pntxtb\'B7}}\fi-360\li720\sa200\sl276\slmult1 Criando um SVC do Tipo LoadBalancer:\par
+
+\pard\sa200\sl276\slmult1 Esse \'e9 um recurso igual o ClusterID, mas que permite conversa com o mundo externo (ou seja, fica igual o NodePort), a diferen\'e7a que esse recurso \'e9 integrado automaticamente ao recurso chamado LoadBalancer do cloud provider que escolhermos (AWS, Azure, GCP).\line\line Para test\'e1-lo poderiamos cirar um pod-1 no GCP, para isso poderiamos abrir o terminal do Cluster do GCP, escrever o comando "cat > pod-1.yaml e colocar na linha de baixo o mesmo conteudo do arquivo que descreve o pod-1.yaml" ap\'f3s isso rodar o comando "kubectln apply -f pod-1.yaml".\line\par
+Agora rodar o comando para criar o arquivo o LoadBalancer:\par
+\par
+\tab cat > lb.yaml\line apiVersion: v1\par
+kind: Service\par
+metadata:\par
+  name: svc-pod-1-loadbalancer\par
+spec:\par
+  type: LoadBalancer\par
+  ports:\par
+    - port: 80\par
+      nodePort: 30000\par
+  selector:\par
+    app: primeiro-pod\line\par
+Agora rodar o comando para criar o recurso LoadBalancer:\par
+\par
+\tab kubectl apply -f lb.yaml\par
+\par
+Agora o LoadBalancer j\'e1 foi criado. Podemos entrar na se\'e7\'e3o Servi\'e7os e Entradas e veremos nosso LoadBalancer. Clicando em seu endere\'e7o (Pontos de extremidade) seremos enviado para p\'e1gina.\par
+}
+ 

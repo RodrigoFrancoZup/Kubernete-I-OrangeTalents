@@ -1,0 +1,40 @@
+Capítulo 02 - Criando o Cluster
+Nesse capítulo nós aprendemos:
+
+⦁	Como criar o Cluster no Windows, Linux e no Google Cloud Plataform (GCP);
+
+⦁	Windows: A instalção do Docker Desktop traz junto uma ferramenta que permite criamos um Cluster do Kubernet. Tendo o Docker Desktop instalados, basta abrí-lo, ir em configurações (Icone de Engrenagem) -> Kubernets -> Marcar a opção Enable Kubernetes e clicar em aplicar.
+
+Agora podemos ver que o Kubernetes está on-line (Bolinha verde). Com ele on-line podemos acessar o terminal (preferencialmente do Power Shell) e rodar o comando: 
+
+	kubectl get nodes
+
+No Windows só de ativar o Kubernetes um Cluster já é criado para gente, logo haverá neste cluster o Resouce do tipo API e por isso o comando kubectl get nodes funcionou!
+
+⦁	Linux: Aqui precisamos instalar a ferramenta Kubectl, acesse e siga os passos: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
+
+Agora o Kubectl está instalado, mas diferentemente do Windows, não temos ainda um Cluster. Para isso teremos que instalar o Minikube. Acesse para isso https://minikube.sigs.k8s.io/docs/start/
+
+Com o comando minikube start vamos criar um Cluster local. Mas nesse comando precisamos passar o parâmetro --vm-drviver, esse parâmetro é um driver de virtualização, podemos usar o Virtual Box para isso. Então temos que instalar o Virtual Box, acesse o site https://www.virtualbox.org/wiki/Linux_Downloads para fazer essa instalação.
+
+Agora sim poderemos usar no terminal o comando do Minikube, no caso o comando: 
+	
+	minikube start --vm-drviver=virtualbox
+
+Agora já temos o Cluster local criado, logo podeos ver algumas informações desse Cluster com o comando: 
+
+	kubectl get nodes
+
+Lembre-se, toda vez que iniciarmos a máquina devemos executar o comando:
+
+	minikube start --vm-drviver=virtualbox
+
+⦁	GCP: Basta logar no site https://cloud.google.com/ com uma conta Google e acessar o Console. 
+
+Criar um novo Projeto na plataforma e depois entrar neste Projeto;
+
+Na barra de pesquisa procurar por Kubernetes e selecionar a opção Kubernetes Engine -> Clicar em Criar cluster -> configurar o nosso cluster com nome, zona, ect. -> Clicar em Criar.
+
+Agora na seção Clusters do Kubernetes vamos ter uma lista com os Clusters criados, vamos ter um por enquanto. Podemos clicar no botão Conectar e assim um Terminal será aberto. Podemos agora rodar o comando:
+
+	kubectl get nodes
